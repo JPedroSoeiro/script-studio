@@ -34,6 +34,18 @@ export function buildPreviewDocument({
   }
   window.addEventListener("error", (e) => report(String(e.error?.stack || e.message)));
   window.addEventListener("unhandledrejection", (e) => report(String(e.reason?.stack || e.reason)));
+
+  // srcdoc documents resolve relative hrefs against the parent page's URL,
+  // not their own — so a plain "#section" link would navigate this iframe
+  // to the outer app instead of scrolling in place. Intercept and handle
+  // in-page hash links manually to keep navigation contained to the preview.
+  document.addEventListener("click", (e) => {
+    const anchor = e.target instanceof Element ? e.target.closest("a[href]") : null;
+    const href = anchor?.getAttribute("href") || "";
+    if (!href.startsWith("#") || href.length < 2) return;
+    e.preventDefault();
+    document.getElementById(href.slice(1))?.scrollIntoView({ behavior: "smooth", block: "start" });
+  });
 </script>
 <script type="module">
 ${js}
